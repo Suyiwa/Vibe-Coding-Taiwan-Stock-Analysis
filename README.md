@@ -89,7 +89,7 @@ pip install yfinance mplfinance matplotlib pandas numpy
    * 透過 **K值與 D值** 的隨機震盪判讀，精確掌握短期的買賣訊號點。
 
 ---
-## ⚖️ 授權條款與免責聲明 (License & Disclaimer)
+## 授權條款與免責聲明 (License & Disclaimer)
 
 ### 授權條款
 本專案採用 **[MIT License](LICENSE)** 授權。您可以自由地使用、修改及分發本程式碼，但須保留原作者之版權聲明。
@@ -98,7 +98,7 @@ pip install yfinance mplfinance matplotlib pandas numpy
 本工具僅作為「生成式 AI」課程之教學實作與學術研究參考，**不構成任何形式的投資建議或邀約**。 程式抓取之數據源自 Yahoo Finance，數據可能存在延遲或誤差，不保證數據之即時性與精確性。金融市場投資具有高度風險，過往績效不代表未來表現。使用者在進行任何金融決策前，應獨立思考或諮詢專業投資顧問，使用本程式所造成之任何財務損失或法律責任，開發小組成員概不負責。**投資者應自負盈虧責任。**
 
 ---
-## 👥 小組成員 (Team Members)
+## 小組成員 (Team Members)
 * **余沛達** (411770265)：AI 邏輯構建、程式初版開發 (Gemini/ChatGPT)
 * **蘇靖文** (411770323)：測試數據驗證、程式框架重構 (Claude)、GitHub 版本控管
 * **黃國維** (411770364)：環境整合、股票市場分類研究
