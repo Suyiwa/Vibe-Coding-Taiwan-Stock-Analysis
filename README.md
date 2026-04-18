@@ -9,7 +9,7 @@ AI-assisted stock technical analysis system using Gemini, ChatGPT, and Claude. F
 ---
 
 ## AI 工具協作紀錄 (AI Collaboration)
-本專案核心開發流程如下，展現了「人機協作」的高效率：
+本專案核心開發流程如下：
 * **ChatGPT (GPT-4)**：負責初期專案架構規劃與非程式類的股票專業分類邏輯。
 * **Google Gemini**：負責編寫核心計算邏輯與 Python 初版程式碼，並於 Google Colab 進行即時驗證。
 * **Claude 3.5**：負責程式碼重構、Debug 以及將 Colab 腳本轉化為`.py` 模組，優化系統框架。
@@ -86,19 +86,26 @@ pip install yfinance mplfinance matplotlib pandas numpy
 4. **MACD 動能層 (MACD Layer)**：
    * 呈現 **MACD 柱狀圖** 與 **快慢線 (DIF/DEA)**，用於偵測趨勢的增強或衰退。
 5. **KD 震盪層 (KD Layer)**：
-   * 透過 **K值與 D值** 的隨機震盪判讀，精確掌握短期的買賣訊號點。
+    透過 **K值與 D值** 的隨機震盪判讀，精確掌握短期的買賣訊號點。
+
+<img width="1283" height="666" alt="Figure_1" src="https://github.com/user-attachments/assets/afc54b5c-1143-4b90-9e78-1ae4d26ec444" />
+
+*<img width="1276" height="821" alt="螢幕擷取畫面 2026-04-19 001913" src="https://github.com/user-attachments/assets/8ffbade9-ab38-49fb-b4c0-673c8cc8bb28" />
+*<img width="1283" height="666" alt="2" src="https://github.com/user-attachments/assets/06c4aadc-1720-47c8-b648-2ae2a3e1caa9" />
+
+
 
 ---
-## 授權條款與免責聲明 (License & Disclaimer)
+## 授權條款與免責聲明
 
 ### 授權條款
 本專案採用 **[MIT License](LICENSE)** 授權。您可以自由地使用、修改及分發本程式碼，但須保留原作者之版權聲明。
 
-### 免責聲明 (Disclaimer)
+### 免責聲明 
 本工具僅作為「生成式 AI」課程之教學實作與學術研究參考，**不構成任何形式的投資建議或邀約**。 程式抓取之數據源自 Yahoo Finance，數據可能存在延遲或誤差，不保證數據之即時性與精確性。金融市場投資具有高度風險，過往績效不代表未來表現。使用者在進行任何金融決策前，應獨立思考或諮詢專業投資顧問，使用本程式所造成之任何財務損失或法律責任，開發小組成員概不負責。**投資者應自負盈虧責任。**
 
 ---
-## 小組成員 (Team Members)
+## 小組成員
 * **余沛達** (411770265)：AI 邏輯構建、程式初版開發 (Gemini/ChatGPT)
 * **蘇靖文** (411770323)：測試數據驗證、程式框架重構 (Claude)、GitHub 版本控管
 * **黃國維** (411770364)：環境整合、股票市場分類研究
