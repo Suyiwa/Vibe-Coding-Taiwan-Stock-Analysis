@@ -546,6 +546,184 @@ def print_ranking(results_summary: list):
     print("═" * 60)
  
 # ═══════════════════════════════════════════════════════════
+# 📊 類股大盤 K 線比較圖
+# ═══════════════════════════════════════════════════════════
+
+def plot_sector_overview(stocks_data: list):
+    """
+    類股大盤綜覽圖（整潔版）
+    stocks_data: list of (stock_code, df, info, result)
+
+    版面：
+      Row 0        : 標準化報酬率走勢（滿寬）
+      Row 1..rows_k: 各股 K 線格（每列最多 3 欄）
+      Row -1       : 評分橫條排名（滿寬）
+    """
+    n = len(stocks_data)
+    if n == 0:
+        return
+
+    # ── 顏色池 ──
+    PALETTE = [
+        '#00d4ff', '#ffd700', '#ff6b6b', '#a29bfe',
+        '#55efc4', '#fd79a8', '#fdcb6e', '#e17055',
+        '#74b9ff', '#00cec9', '#fab1a0', '#6c5ce7',
+    ]
+
+    tail_n = 90          # 顯示最近 90 天
+    cols   = min(n, 3)
+    rows_k = (n + cols - 1) // cols
+
+    # 排名列高度隨股票數動態調整（每支 0.6 英吋，至少 1.8）
+    rank_h_ratio = max(1.8, n * 0.6)
+    height_ratios = [3.0] + [2.8] * rows_k + [rank_h_ratio]
+    total_rows    = 1 + rows_k + 1
+
+    fig_w = max(cols * 6.5, 13)
+    fig_h = sum(height_ratios) * 1.35
+    fig = plt.figure(figsize=(fig_w, fig_h))
+    fig.patch.set_facecolor('#0f0f1a')
+
+    gs = gridspec.GridSpec(
+        total_rows, cols,
+        figure=fig,
+        height_ratios=height_ratios,
+        hspace=0.55, wspace=0.32,
+        left=0.18, right=0.97, top=0.95, bottom=0.04
+    )
+
+    # ══════════════════════════════════════════
+    # (A) 標準化報酬率走勢（滿寬）
+    # ══════════════════════════════════════════
+    ax_norm = fig.add_subplot(gs[0, :])
+    ax_norm.set_facecolor('#1a1a2e')
+    ax_norm.set_title('類股標準化報酬率走勢對比  ( 首日 = 100 )',
+                       fontsize=12, fontweight='bold', color='#eeeeff', pad=10)
+
+    for idx, (code, df, info, result) in enumerate(stocks_data):
+        sub        = df.tail(tail_n).copy()
+        normalized = (sub['Close'] / sub['Close'].iloc[0]) * 100
+        color      = PALETTE[idx % len(PALETTE)]
+        score_str  = f"{result['score']:+d}分"
+        # 圖例只用股票代碼 + 分數，避免長名稱換行
+        label = f"{code}  {score_str}"
+        ax_norm.plot(sub.index, normalized, color=color, lw=2.0, label=label)
+        # 右端數值標記
+        ax_norm.annotate(
+            f" {normalized.iloc[-1]:.1f}",
+            xy=(sub.index[-1], normalized.iloc[-1]),
+            fontsize=8.5, color=color, va='center',
+        )
+
+    ax_norm.axhline(100, color='#636e72', lw=0.9, ls='--', alpha=0.6, label='基準線 100')
+    ax_norm.set_ylabel('報酬率指數', fontsize=10)
+    ax_norm.legend(
+        loc='upper left', fontsize=9, framealpha=0.65,
+        ncol=min(n + 1, 6),          # 全放同一行（加上基準線）
+        handlelength=1.5, columnspacing=1.2
+    )
+    ax_norm.grid(True, alpha=0.4)
+    ax_norm.xaxis.set_major_locator(plt.MaxNLocator(8))
+    plt.setp(ax_norm.get_xticklabels(), rotation=15, fontsize=8)
+
+    # ══════════════════════════════════════════
+    # (B) 各股 K 線子圖
+    # ══════════════════════════════════════════
+    for idx, (code, df, info, result) in enumerate(stocks_data):
+        row_k = idx // cols
+        col_k = idx % cols
+        ax = fig.add_subplot(gs[1 + row_k, col_k])
+        ax.set_facecolor('#1a1a2e')
+
+        sub   = df.tail(tail_n).copy()
+        dates = sub.index
+        color = PALETTE[idx % len(PALETTE)]
+        price = sub['Close'].iloc[-1]
+        cur   = info.get('currency', '')
+
+        # 蠟燭 K 線
+        for date, row in sub.iterrows():
+            o, h, l, c = row['Open'], row['High'], row['Low'], row['Close']
+            bc = COLORS['volume_up'] if c >= o else COLORS['volume_dn']
+            ax.plot([date, date], [l, h], color=bc, lw=0.7, zorder=2)
+            rh = abs(c - o) or (h - l) * 0.01
+            ax.bar(date, rh, bottom=min(o, c), color=bc, width=0.6, zorder=3, alpha=0.9)
+
+        # MA 線
+        ax.plot(dates, sub['MA5'],  color=COLORS['ma5'],  lw=1.0, label='MA5')
+        ax.plot(dates, sub['MA20'], color=COLORS['ma20'], lw=1.0, label='MA20')
+        if not sub['MA60'].isna().all():
+            ax.plot(dates, sub['MA60'], color=COLORS['ma60'], lw=1.0, label='MA60')
+
+        # 布林通道（極淡背景）
+        ax.fill_between(dates, sub['BB_Upper'], sub['BB_Lower'],
+                        alpha=0.04, color='#aaaaaa')
+        ax.plot(dates, sub['BB_Upper'], color='#555577', lw=0.6, ls='--')
+        ax.plot(dates, sub['BB_Lower'], color='#555577', lw=0.6, ls='--')
+
+        # 最新價橫線
+        ax.axhline(price, color=color, lw=0.7, ls=':', alpha=0.8)
+
+        # 子圖標題：兩行 → 只用股票代碼避免過長
+        verdict = result['verdict']
+        ax.set_title(
+            f"{code}   最新 {price:.1f} {cur}   {result['score']:+d}分  {verdict}",
+            fontsize=8.5, color=color, pad=5
+        )
+        ax.legend(loc='upper left', fontsize=7, framealpha=0.5, ncol=3,
+                  handlelength=1.2, columnspacing=0.8)
+        ax.grid(True, alpha=0.35)
+        ax.xaxis.set_major_locator(plt.MaxNLocator(5))
+        plt.setp(ax.get_xticklabels(), rotation=15, fontsize=7)
+
+    # 空格隱藏
+    for empty in range(n, rows_k * cols):
+        fig.add_subplot(gs[1 + empty // cols, empty % cols]).set_visible(False)
+
+    # ══════════════════════════════════════════
+    # (C) 評分橫條排名（滿寬）
+    # ══════════════════════════════════════════
+    ax_rank = fig.add_subplot(gs[-1, :])
+    ax_rank.set_facecolor('#1a1a2e')
+
+    sorted_data = sorted(stocks_data, key=lambda x: x[3]['score'], reverse=True)
+    # Y 軸標籤只用 "代碼  公司簡稱"（最多 10 字截斷）
+    def short_name(info, code):
+        raw = info.get('name', code)
+        return raw[:14] + '…' if len(raw) > 14 else raw
+
+    labels = [f"{c}  {short_name(inf, c)}" for c, _, inf, _ in sorted_data]
+    scores = [r['score'] for _, _, _, r in sorted_data]
+    colors_bar = [
+        '#00ff88' if s >= 6 else
+        '#26a69a' if s >= 3 else
+        '#f39c12' if s >= 0 else
+        '#ef5350' if s >= -3 else '#ff0055'
+        for s in scores
+    ]
+
+    bars = ax_rank.barh(labels, scores, color=colors_bar, height=0.55, zorder=3)
+    for bar, score in zip(bars, scores):
+        offset = 0.15 if score >= 0 else -0.15
+        ha     = 'left' if score >= 0 else 'right'
+        ax_rank.text(
+            bar.get_width() + offset,
+            bar.get_y() + bar.get_height() / 2,
+            f'{score:+d}', va='center', ha=ha, fontsize=9.5, color='#eeeeff'
+        )
+
+    ax_rank.axvline(0, color='#636e72', lw=1.2)
+    ax_rank.set_title('類股評分排名', fontsize=11, fontweight='bold',
+                       color='#eeeeff', pad=8)
+    ax_rank.set_xlabel('評分', fontsize=9)
+    ax_rank.grid(True, axis='x', alpha=0.35, zorder=0)
+    # 左邊留足空間給 Y 軸標籤
+    ax_rank.tick_params(axis='y', labelsize=9)
+
+    plt.show()
+
+
+# ═══════════════════════════════════════════════════════════
 # 🚀 主程式
 # ═══════════════════════════════════════════════════════════
  
@@ -569,28 +747,35 @@ def main():
  
     stocks = [s.strip().upper() for s in user_input.split(",") if s.strip()]
     results_summary = []
- 
+    stocks_data = []   # 用於類股大盤圖
+
     for stock in stocks:
         print(f"\n  🔄 正在分析 {stock}...")
         df, info = fetch_stock_data(stock, period="6mo")
- 
+
         if df is None:
             continue
- 
+
         result = analyze_stock(df, info)
         print_report(stock, df, info, result)
         plot_dashboard(stock, df, info, result)
- 
+
         results_summary.append((
             stock,
             result['score'],
             result['verdict'],
             info.get('name', stock)
         ))
- 
+        stocks_data.append((stock, df, info, result))
+
     if len(results_summary) > 1:
         print_ranking(results_summary)
- 
+
+    # ── 類股大盤綜覽圖（多股才顯示）──
+    if len(stocks_data) > 1:
+        print("\n  📊 正在繪製類股大盤綜覽圖...")
+        plot_sector_overview(stocks_data)
+
     print("\n  ⚠️  免責聲明：本分析僅供參考，不構成任何投資建議。投資有風險，請自行評估。")
  
  
